@@ -30,6 +30,7 @@ enable_testing()
 add_executable(pktscope_tests
   tests/test_main.cpp
   tests/test_parsers.cpp
+  tests/test_flow.cpp
 )
 target_include_directories(pktscope_tests PRIVATE
   ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/third_party ${CMAKE_SOURCE_DIR}/tests)
