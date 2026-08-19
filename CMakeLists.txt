@@ -23,3 +23,13 @@ add_library(pktscope_core
 target_include_directories(pktscope_core PUBLIC
   ${CMAKE_SOURCE_DIR}/include ${PCAP_INCLUDE})
 target_link_libraries(pktscope_core PUBLIC ${PCAP_LIB})
+
+# --- tests ------------------------------------------------------------------
+enable_testing()
+add_executable(pktscope_tests
+  tests/test_main.cpp
+)
+target_include_directories(pktscope_tests PRIVATE
+  ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/third_party ${CMAKE_SOURCE_DIR}/tests)
+target_link_libraries(pktscope_tests PRIVATE pktscope_core)
+add_test(NAME unit COMMAND pktscope_tests)
