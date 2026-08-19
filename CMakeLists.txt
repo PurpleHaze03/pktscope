@@ -33,6 +33,10 @@ target_include_directories(pktscope_core PUBLIC
   ${CMAKE_SOURCE_DIR}/include ${PCAP_INCLUDE} ${CURSES_INCLUDE_DIRS})
 target_link_libraries(pktscope_core PUBLIC ${PCAP_LIB} ${CURSES_LIBRARIES})
 
+# --- executable -------------------------------------------------------------
+add_executable(pktscope src/main.cpp)
+target_link_libraries(pktscope PRIVATE pktscope_core)
+
 # --- tests ------------------------------------------------------------------
 enable_testing()
 add_executable(pktscope_tests
