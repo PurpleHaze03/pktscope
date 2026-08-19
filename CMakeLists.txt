@@ -15,6 +15,9 @@ add_compile_options(-Wall -Wextra -Wpedantic)
 find_library(PCAP_LIB pcap REQUIRED)
 find_path(PCAP_INCLUDE pcap/pcap.h REQUIRED)
 
+set(CURSES_NEED_NCURSES TRUE)
+find_package(Curses REQUIRED)
+
 # --- core library (everything except main) ----------------------------------
 add_library(pktscope_core
   src/protocols.cpp
@@ -24,10 +27,11 @@ add_library(pktscope_core
   src/stats.cpp
   src/capture.cpp
   src/report.cpp
+  src/tui.cpp
 )
 target_include_directories(pktscope_core PUBLIC
-  ${CMAKE_SOURCE_DIR}/include ${PCAP_INCLUDE})
-target_link_libraries(pktscope_core PUBLIC ${PCAP_LIB})
+  ${CMAKE_SOURCE_DIR}/include ${PCAP_INCLUDE} ${CURSES_INCLUDE_DIRS})
+target_link_libraries(pktscope_core PUBLIC ${PCAP_LIB} ${CURSES_LIBRARIES})
 
 # --- tests ------------------------------------------------------------------
 enable_testing()
