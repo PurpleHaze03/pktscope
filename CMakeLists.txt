@@ -31,6 +31,7 @@ enable_testing()
 add_executable(pktscope_tests
   tests/test_main.cpp
   tests/test_parsers.cpp
+  tests/test_detectors.cpp
   tests/test_flow.cpp
 )
 target_include_directories(pktscope_tests PRIVATE
