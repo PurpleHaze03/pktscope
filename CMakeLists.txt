@@ -22,6 +22,7 @@ add_library(pktscope_core
   src/flow.cpp
   src/detect.cpp
   src/stats.cpp
+  src/capture.cpp
 )
 target_include_directories(pktscope_core PUBLIC
   ${CMAKE_SOURCE_DIR}/include ${PCAP_INCLUDE})
