@@ -1,0 +1,6 @@
+build/
+*.o
+*.pcap
+!tests/data/*.pcap
+compile_commands.json
+.cache/
