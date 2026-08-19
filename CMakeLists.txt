@@ -44,8 +44,11 @@ add_executable(pktscope_tests
   tests/test_parsers.cpp
   tests/test_detectors.cpp
   tests/test_flow.cpp
+  tests/test_pcap_integration.cpp
 )
 target_include_directories(pktscope_tests PRIVATE
   ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/third_party ${CMAKE_SOURCE_DIR}/tests)
+target_compile_definitions(pktscope_tests PRIVATE
+  PKTSCOPE_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data")
 target_link_libraries(pktscope_tests PRIVATE pktscope_core)
 add_test(NAME unit COMMAND pktscope_tests)
