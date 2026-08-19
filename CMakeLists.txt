@@ -19,6 +19,7 @@ find_path(PCAP_INCLUDE pcap/pcap.h REQUIRED)
 add_library(pktscope_core
   src/protocols.cpp
   src/dissector.cpp
+  src/flow.cpp
 )
 target_include_directories(pktscope_core PUBLIC
   ${CMAKE_SOURCE_DIR}/include ${PCAP_INCLUDE})
