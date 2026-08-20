@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-project(pktscope VERSION 1.0.0 LANGUAGES CXX)
+project(pktscope
+  VERSION 1.0.0
+  DESCRIPTION "Live network packet analyzer with built-in intrusion detection"
+  HOMEPAGE_URL "https://github.com/PurpleHaze03/pktscope"
+  LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
