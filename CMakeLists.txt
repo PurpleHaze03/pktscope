@@ -45,6 +45,7 @@ add_executable(pktscope_tests
   tests/test_detectors.cpp
   tests/test_flow.cpp
   tests/test_pcap_integration.cpp
+  tests/test_review_fixes.cpp
 )
 target_include_directories(pktscope_tests PRIVATE
   ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/third_party ${CMAKE_SOURCE_DIR}/tests)
