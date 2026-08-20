@@ -59,9 +59,16 @@ private:
     void check_syn_flood(const Packet& p, std::vector<Alert>& out);
     void check_stealth_scan(const Packet& p, std::vector<Alert>& out);
     void check_dns_tunnel(const Packet& p, std::vector<Alert>& out);
+    // Evict state whose activity has aged out of the detection windows, so a
+    // flood of spoofed source/destination addresses cannot grow the tracking
+    // maps without bound and OOM the analyzer.
+    void prune(double now);
 
     DetectorConfig cfg_;
     std::vector<Alert> alerts_;
+    std::uint64_t seen_ = 0;  // packets inspected, for periodic pruning
+    static constexpr std::uint64_t PRUNE_EVERY = 4096;
+    static constexpr std::size_t MAX_ARP_BINDINGS = 200000;
 
     // port-scan state: per source IP, recent (timestamp, dst:port) touches
     struct PortHit { double ts; std::uint32_t dst_port_key; };

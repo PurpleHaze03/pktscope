@@ -17,6 +17,8 @@ std::vector<Alert> Detector::inspect(const Packet& p) {
     std::vector<Alert> out;
     if (p.malformed) return out;
 
+    if (++seen_ % PRUNE_EVERY == 0) prune(p.timestamp);
+
     if (p.l3 == L3::Arp) {
         check_arp_spoof(p, out);
     } else if (p.l4 == L4::Tcp) {
@@ -126,6 +128,36 @@ void Detector::check_syn_flood(const Packet& p, std::vector<Alert>& out) {
                            std::to_string((int)cfg_.syn_flood_window) +
                            "s (possible SYN flood / DoS)"});
     }
+}
+
+// ---- periodic pruning of aged-out state -----------------------------------
+
+void Detector::prune(double now) {
+    // Drop per-source scan state whose most recent hit has fallen out of the
+    // window (and the matching "already reported" marker).
+    for (auto it = scan_hits_.begin(); it != scan_hits_.end();) {
+        const auto& hits = it->second;
+        if (hits.empty() || now - hits.back().ts > cfg_.port_scan_window) {
+            scan_reported_.erase(it->first);
+            it = scan_hits_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    // Same for per-target SYN-flood state.
+    for (auto it = syn_times_.begin(); it != syn_times_.end();) {
+        const auto& times = it->second;
+        if (times.empty() || now - times.back() > cfg_.syn_flood_window) {
+            flood_reported_.erase(it->first);
+            it = syn_times_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    // ARP bindings are legitimate long-lived state, but a gratuitous-ARP flood
+    // with millions of spoofed IPs could still grow it unbounded. Cap it: on
+    // overflow, clear and re-learn (worst case, one missed poisoning alert).
+    if (arp_bindings_.size() > MAX_ARP_BINDINGS) arp_bindings_.clear();
 }
 
 // ---- DNS tunneling / exfiltration heuristic -------------------------------
