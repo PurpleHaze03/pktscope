@@ -1,6 +1,7 @@
 // pktscope -- a live network packet analyzer with security detections.
 #include <atomic>
 #include <csignal>
+#include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -110,10 +111,17 @@ int main(int argc, char** argv) {
         };
 
         if (interactive) {
-            // Capture on a worker thread; render on the main thread.
+            // Capture on a worker thread; render on the main thread. An
+            // exception escaping a thread's entry function calls std::terminate,
+            // so a mid-capture pcap error must be caught here, not allowed to
+            // crash the whole process.
             std::thread worker([&] {
-                cap.run(handle, opt.max);
-                g_running = false;  // file/interface ended
+                try {
+                    cap.run(handle, opt.max);
+                } catch (const std::exception& e) {
+                    std::fprintf(stderr, "capture error: %s\n", e.what());
+                }
+                g_running = false;  // file/interface ended or errored
             });
             dashboard.run_ui(source, g_running);
             cap.stop();
