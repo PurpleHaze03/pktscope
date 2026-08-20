@@ -64,6 +64,9 @@ void Detector::check_port_scan(const Packet& p, std::vector<Alert>& out) {
 
 void Detector::check_stealth_scan(const Packet& p, std::vector<Alert>& out) {
     const TcpFlags& f = p.tcp_flags;
+    // `only()` ignores ECE/CWR, so exclude those here to avoid mislabeling an
+    // ECN-negotiating packet (ECE/CWR set) as a flagless NULL scan.
+    if (f.ece || f.cwr) return;
     const char* kind = nullptr;
     // NULL scan: no flags set at all.
     if (f.only(false, false, false, false, false, false)) kind = "NULL scan";
