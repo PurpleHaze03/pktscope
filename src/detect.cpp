@@ -81,7 +81,11 @@ void Detector::check_stealth_scan(const Packet& p, std::vector<Alert>& out) {
 // ---- ARP spoofing: an IP suddenly claimed by a different MAC ---------------
 
 void Detector::check_arp_spoof(const Packet& p, std::vector<Alert>& out) {
-    if (!p.arp || !p.arp->is_reply()) return;
+    // Learn/verify bindings from BOTH replies and requests: ARP cache poisoning
+    // is very commonly done with unsolicited/gratuitous ARP *requests* (opcode
+    // 1), whose sender IP/MAC fields are fully populated -- checking only
+    // replies would miss that entire class of attack.
+    if (!p.arp) return;
     std::uint32_t ip = p.arp->sender_ip;
     const MacAddr& mac = p.arp->sender_mac;
     if (ip == 0) return;
