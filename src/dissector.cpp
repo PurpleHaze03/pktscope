@@ -59,6 +59,50 @@ std::string Packet::summary() const {
     return "non-IP frame";
 }
 
+// Walk the IPv6 extension-header chain, advancing `r` to the upper-layer header
+// and returning its protocol number. Without this, a single Hop-by-Hop/Routing/
+// Fragment/Dest-Options/AH header makes the L4 protocol look "unknown" and all
+// TCP/UDP detections silently go blind -- a trivial IDS evasion. Bounded loop;
+// stops at ESP (50, encrypted) or No-Next-Header (59).
+static std::uint8_t walk_ipv6_ext_headers(ByteReader& r, std::uint8_t next) {
+    for (int depth = 0; depth < 16; ++depth) {
+        std::size_t ext_len;
+        switch (next) {
+            case 0:    // Hop-by-Hop
+            case 43:   // Routing
+            case 60:   // Destination Options
+            case 135:  // Mobility
+            {
+                std::uint8_t nh = r.u8();
+                std::uint8_t hdr_ext_len = r.u8();
+                ext_len = static_cast<std::size_t>(hdr_ext_len + 1) * 8;
+                r.skip(ext_len - 2);  // already consumed next-header + len bytes
+                next = nh;
+                break;
+            }
+            case 44:  // Fragment: fixed 8 bytes
+            {
+                std::uint8_t nh = r.u8();
+                r.skip(7);
+                next = nh;
+                break;
+            }
+            case 51:  // Authentication Header: length in 4-byte units, minus 2
+            {
+                std::uint8_t nh = r.u8();
+                std::uint8_t payload_len = r.u8();
+                ext_len = static_cast<std::size_t>(payload_len + 2) * 4;
+                r.skip(ext_len - 2);
+                next = nh;
+                break;
+            }
+            default:
+                return next;  // upper-layer protocol (TCP/UDP/ICMPv6) or ESP/none
+        }
+    }
+    return next;
+}
+
 // Parse L4 (TCP/UDP/ICMP) given the L3 protocol number, filling `p`.
 static void dissect_l4(Packet& p, ByteReader& r, std::uint8_t proto) {
     if (proto == static_cast<std::uint8_t>(IpProto::TCP)) {
@@ -150,9 +194,17 @@ Packet dissect(Bytes frame, int linktype, double timestamp, std::uint32_t wire_l
         p.l3 = L3::IPv6;
         p.src_ip = ipv6_to_string(ip->src);
         p.dst_ip = ipv6_to_string(ip->dst);
-        p.ip_proto = ip->next_header;
         p.ttl = ip->hop_limit;
-        dissect_l4(p, r, ip->next_header);
+        std::uint8_t upper = ip->next_header;
+        try {
+            upper = walk_ipv6_ext_headers(r, ip->next_header);
+        } catch (const ShortBuffer&) {
+            p.malformed = true;
+            p.note = "bad IPv6 ext headers";
+            return p;
+        }
+        p.ip_proto = upper;
+        dissect_l4(p, r, upper);
     }
     return p;
 }
