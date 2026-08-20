@@ -2,6 +2,7 @@
 // optional BPF filter, and delivers dissected packets to a callback.
 #pragma once
 
+#include <atomic>
 #include <functional>
 #include <string>
 
@@ -44,7 +45,10 @@ private:
     void* handle_ = nullptr;  // pcap_t*
     int linktype_ = 0;
     bool live_ = false;
-    bool stop_ = false;
+    // Written by stop() from another thread while the capture loop reads it, so
+    // it must be atomic to avoid a data race (and a hoisted load that never
+    // sees the change, hanging shutdown on a quiet live interface).
+    std::atomic<bool> stop_{false};
 };
 
 }  // namespace pktscope

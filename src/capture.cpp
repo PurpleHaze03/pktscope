@@ -38,14 +38,16 @@ Capture::~Capture() {
 }
 
 Capture::Capture(Capture&& o) noexcept {
-    handle_ = o.handle_; linktype_ = o.linktype_; live_ = o.live_; stop_ = o.stop_;
+    handle_ = o.handle_; linktype_ = o.linktype_; live_ = o.live_;
+    stop_.store(o.stop_.load());
     o.handle_ = nullptr;
 }
 
 Capture& Capture::operator=(Capture&& o) noexcept {
     if (this != &o) {
         if (handle_) pcap_close(as_pcap(handle_));
-        handle_ = o.handle_; linktype_ = o.linktype_; live_ = o.live_; stop_ = o.stop_;
+        handle_ = o.handle_; linktype_ = o.linktype_; live_ = o.live_;
+        stop_.store(o.stop_.load());
         o.handle_ = nullptr;
     }
     return *this;
@@ -87,6 +89,11 @@ std::uint64_t Capture::run(const Callback& cb, long max) {
     return count;
 }
 
-void Capture::stop() { stop_ = true; }
+void Capture::stop() {
+    stop_ = true;
+    // Interrupt a blocking pcap read so a quiet live interface doesn't keep the
+    // worker parked in pcap_next_ex until the next packet or timeout.
+    if (handle_) pcap_breakloop(as_pcap(handle_));
+}
 
 }  // namespace pktscope
