@@ -131,6 +131,9 @@ void Detector::check_syn_flood(const Packet& p, std::vector<Alert>& out) {
 // ---- DNS tunneling / exfiltration heuristic -------------------------------
 
 void Detector::check_dns_tunnel(const Packet& p, std::vector<Alert>& out) {
+    // Only inspect queries: the exfil vector is the outbound QNAME, and running
+    // on responses would blame the resolver's IP as the "tunneling source".
+    if (p.dns->is_response) return;
     const std::string& name = p.dns->first_qname;
     if (name.empty()) return;
     int labels = 1 + static_cast<int>(std::count(name.begin(), name.end(), '.'));
