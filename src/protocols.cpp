@@ -49,8 +49,11 @@ std::optional<EthernetHeader> parse_ethernet(ByteReader& r) {
         h.dst = read_mac(r);
         h.src = read_mac(r);
         h.ethertype = r.u16();
-        // Skip a single 802.1Q VLAN tag if present, exposing the inner type.
-        if (h.ethertype == static_cast<std::uint16_t>(EtherType::VLAN)) {
+        // Skip any stack of VLAN tags (802.1Q 0x8100 and 802.1ad/QinQ 0x88A8),
+        // exposing the inner ethertype. Bounded loop guards against a crafted
+        // frame that is all VLAN tags.
+        for (int depth = 0; depth < 8; ++depth) {
+            if (h.ethertype != 0x8100 && h.ethertype != 0x88A8) break;
             r.skip(2);           // priority/VLAN id
             h.ethertype = r.u16();
         }
