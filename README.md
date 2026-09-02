@@ -178,12 +178,6 @@ python3 tools/make_sample_pcaps.py tests/data
   parses arguments and wires capture → dissect → detect → output, so tests
   exercise the real code paths.
 
-## Limitations
-
-Scope is deliberately focused; it is not a full IDS replacement. No IP-fragment
-or TCP-segment reassembly of application payloads, no TLS inspection, and the
-detection heuristics are threshold-based. These are the natural next milestones.
-
 ## License
 
 MIT
