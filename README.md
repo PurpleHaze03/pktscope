@@ -1,6 +1,6 @@
 # pktscope
 
-**A live network packet analyzer with built-in intrusion detection, in modern C++.**
+**A live network packet analyzer with built-in anomaly detection, in modern C++.**
 
 pktscope captures traffic from a live interface or a `.pcap` file, dissects it
 layer by layer (Ethernet → ARP / IPv4 / IPv6 → TCP / UDP / ICMP → DNS), tracks
