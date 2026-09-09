@@ -1,0 +1,38 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake build-essential libpcap-dev libncurses-dev
+
+      # Uses the project's own build script, so CI fails if that script breaks.
+      - name: Build
+        run: ./build.sh
+
+      - name: Run the test suite
+        working-directory: build
+        run: ctest --output-on-failure
+
+      # pktscope exits non-zero when a critical alert fires, so it can gate a
+      # pipeline. Check both halves of that contract.
+      - name: Check the CLI exit codes
+        run: |
+          ./build/pktscope -r tests/data/benign.pcap --report
+          if ./build/pktscope -r tests/data/port_scan.pcap --report; then
+            echo "::error::expected a non-zero exit for the port scan capture"
+            exit 1
+          fi
